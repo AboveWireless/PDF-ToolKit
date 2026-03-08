@@ -1,0 +1,46 @@
+name: release-windows
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install -U pip && python -m pip install -e .[dev]
+
+      - name: Run tests
+        run: python -m pytest
+
+      - name: Build GUI package
+        run: powershell -ExecutionPolicy Bypass -File scripts/build_gui.ps1
+
+      - name: Build release package
+        run: |
+          $env:PDF_TOOLKIT_SKIP_BUILD = "1"
+          powershell -ExecutionPolicy Bypass -File scripts/package_release.ps1
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-toolkit-windows-x64
+          path: dist/release/*
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: .github/release-template.md
+          files: |
+            dist/release/pdf-toolkit-windows-x64.zip
+            dist/release/pdf-toolkit-windows-x64-checksums.txt

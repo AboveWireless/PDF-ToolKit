@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pdf-toolkit"
+version = "0.3.0"
+description = "A Windows-first desktop PDF toolkit for practical office workflows."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+keywords = ["pdf", "desktop", "windows", "ocr", "office"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: Microsoft :: Windows",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Office/Business",
+  "Topic :: Utilities",
+]
+dependencies = [
+  "Pillow>=10.0.0",
+  "PySide6>=6.8.0",
+  "pdfplumber>=0.11.0",
+  "pypdf>=5.0.0",
+  "pypdfium2>=4.30.0",
+  "PyMuPDF>=1.24.0",
+  "PyYAML>=6.0.0",
+  "openpyxl>=3.1.0",
+  "reportlab>=4.0.0",
+  "rich>=13.7.0",
+  "typer>=0.12.0",
+  "watchdog>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+  "pytest-qt>=4.4.0",
+  "pyinstaller>=6.0.0",
+]
+
+[project.scripts]
+pdf-toolkit = "pdf_toolkit.gui:main"
+
+[project.urls]
+Homepage = "https://github.com/JeffScripts/pdf-toolkit"
+Documentation = "https://github.com/JeffScripts/pdf-toolkit#readme"
+Issues = "https://github.com/JeffScripts/pdf-toolkit/issues"
+Releases = "https://github.com/JeffScripts/pdf-toolkit/releases"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

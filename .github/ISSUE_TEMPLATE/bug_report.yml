@@ -1,0 +1,37 @@
+name: Bug report
+description: Report a reproducible problem in PDF Toolkit
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the bug and the expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include sample files or commands if relevant.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: v0.3.0
+  - type: dropdown
+    id: install_type
+    attributes:
+      label: Install type
+      options:
+        - Windows packaged app
+        - Source install
+        - Other
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment details
+      description: Windows version, Python version, OCR tools, or other useful context.
