@@ -1,6 +1,6 @@
 #define MyAppName "PDF Toolkit"
-#define MyAppPublisher "JeffScripts"
-#define MyAppURL "https://github.com/JeffScripts/pdf-toolkit"
+#define MyAppPublisher "AboveWireless"
+#define MyAppURL "https://github.com/AboveWireless/WirelessOffice"
 #ifndef AppVersion
   #define AppVersion "0.0.0"
 #endif

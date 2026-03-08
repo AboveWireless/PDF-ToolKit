@@ -5,9 +5,9 @@ from pdf_toolkit import __version__
 APP_NAME = "PDF Toolkit"
 APP_TAGLINE = "Desktop PDF workflows for office teams and practical admin work."
 APP_VERSION = __version__
-ORGANIZATION_NAME = "JeffScripts"
-ORGANIZATION_DOMAIN = "jeffscripts.local"
-PROJECT_URL = "https://github.com/JeffScripts/pdf-toolkit"
+ORGANIZATION_NAME = "AboveWireless"
+ORGANIZATION_DOMAIN = "abovewireless.local"
+PROJECT_URL = "https://github.com/AboveWireless/WirelessOffice"
 RELEASES_URL = f"{PROJECT_URL}/releases"
 ISSUES_URL = f"{PROJECT_URL}/issues"
 DOCS_URL = f"{PROJECT_URL}#readme"

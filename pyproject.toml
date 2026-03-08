@@ -46,10 +46,10 @@ dev = [
 pdf-toolkit = "pdf_toolkit.gui:main"
 
 [project.urls]
-Homepage = "https://github.com/JeffScripts/pdf-toolkit"
-Documentation = "https://github.com/JeffScripts/pdf-toolkit#readme"
-Issues = "https://github.com/JeffScripts/pdf-toolkit/issues"
-Releases = "https://github.com/JeffScripts/pdf-toolkit/releases"
+Homepage = "https://github.com/AboveWireless/WirelessOffice"
+Documentation = "https://github.com/AboveWireless/WirelessOffice#readme"
+Issues = "https://github.com/AboveWireless/WirelessOffice/issues"
+Releases = "https://github.com/AboveWireless/WirelessOffice/releases"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

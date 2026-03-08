@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/JeffScripts/pdf-toolkit/releases">Download for Windows</a> |
+  <a href="https://github.com/AboveWireless/WirelessOffice/releases">Download for Windows</a> |
   <a href="docs/run-from-source.md">Run from source</a> |
   <a href="docs/enabling-ocr.md">Enable OCR later</a>
 </p>
@@ -41,7 +41,7 @@ It is Windows-first, offline-first, and designed to feel like a normal desktop a
 
 ## 2-minute start
 
-1. Open the latest [GitHub Release](https://github.com/JeffScripts/pdf-toolkit/releases).
+1. Open the latest [GitHub Release](https://github.com/AboveWireless/WirelessOffice/releases).
 2. Download `pdf-toolkit-setup-windows-x64.exe`.
 3. Run the installer and accept the default per-user install path.
 4. Launch `PDF Toolkit` from Start Menu.
