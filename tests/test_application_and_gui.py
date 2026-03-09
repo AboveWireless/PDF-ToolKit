@@ -124,6 +124,18 @@ def _is_descendant_of(widget: QWidget, ancestor: QWidget) -> bool:
     return False
 
 
+def _workspace_structure(window: MainWindow) -> tuple[QScrollArea, QWidget, QFrame, QFrame]:
+    scroll = window.findChild(QScrollArea, "FormScroll")
+    assert scroll is not None
+    scroll_content = scroll.widget()
+    assert scroll_content is not None
+    operation_card = window.findChild(QFrame, "OperationHero")
+    footer_card = window.findChild(QFrame, "ActionBarCard")
+    assert operation_card is not None
+    assert footer_card is not None
+    return scroll, scroll_content, operation_card, footer_card
+
+
 def test_gui_launches_and_lists_operations(qtbot) -> None:
     window = _fresh_window(qtbot)
     window.show()
@@ -271,16 +283,9 @@ def test_batch_recent_activity_tracks_real_input_path(qtbot, tmp_path: Path) -> 
 
 def test_workspace_scroll_contains_center_stack_and_keeps_footer_fixed(qtbot) -> None:
     window = _fresh_window(qtbot)
-    scroll = window.findChild(QScrollArea, "FormScroll")
-    assert scroll is not None
-    scroll_content = scroll.widget()
-    assert scroll_content is not None
+    scroll, scroll_content, operation_card, footer_card = _workspace_structure(window)
     assert scroll_content.objectName() == "WorkspaceScrollContent"
-
-    operation_card = window.findChild(QFrame, "OperationHero")
-    footer_card = window.findChild(QFrame, "ActionBarCard")
-    assert operation_card is not None
-    assert footer_card is not None
+    assert scroll.widget() is scroll_content
 
     parameter_header = next(
         label for label in window.findChildren(QLabel)
@@ -301,14 +306,7 @@ def test_workspace_scroll_contains_center_stack_and_keeps_footer_fixed(qtbot) ->
 
 def test_workspace_scroll_structure_survives_operation_switching(qtbot) -> None:
     window = _fresh_window(qtbot)
-    scroll = window.findChild(QScrollArea, "FormScroll")
-    assert scroll is not None
-    scroll_content = scroll.widget()
-    assert scroll_content is not None
-    footer_card = window.findChild(QFrame, "ActionBarCard")
-    operation_card = window.findChild(QFrame, "OperationHero")
-    assert footer_card is not None
-    assert operation_card is not None
+    _scroll, scroll_content, operation_card, footer_card = _workspace_structure(window)
 
     window._apply_template("merge-invoice-packet")
     window._select_operation("split")
@@ -318,3 +316,27 @@ def test_workspace_scroll_structure_survives_operation_switching(qtbot) -> None:
     assert _is_descendant_of(operation_card, scroll_content)
     assert _is_descendant_of(window._form_host, scroll_content)
     assert not _is_descendant_of(footer_card, scroll_content)
+
+
+def test_workspace_scroll_structure_survives_all_operation_switches(qtbot) -> None:
+    window = _fresh_window(qtbot)
+    _scroll, scroll_content, operation_card, footer_card = _workspace_structure(window)
+
+    for operation_id in window._definition_map:
+        window._select_operation(operation_id)
+        assert _is_descendant_of(window._start_here_panel, scroll_content)
+        assert _is_descendant_of(operation_card, scroll_content)
+        assert _is_descendant_of(window._form_host, scroll_content)
+        assert not _is_descendant_of(footer_card, scroll_content)
+
+
+def test_workspace_scroll_structure_survives_all_templates(qtbot) -> None:
+    window = _fresh_window(qtbot)
+    _scroll, scroll_content, operation_card, footer_card = _workspace_structure(window)
+
+    for template in sorted(get_workflow_templates(), key=lambda item: item.id):
+        window._apply_template(template.id)
+        assert _is_descendant_of(window._start_here_panel, scroll_content)
+        assert _is_descendant_of(operation_card, scroll_content)
+        assert _is_descendant_of(window._form_host, scroll_content)
+        assert not _is_descendant_of(footer_card, scroll_content)
