@@ -100,6 +100,7 @@ def test_prepare_request_requires_question_for_llm_qa(sample_pdf: Path, tmp_path
 pytest.importorskip("PySide6")
 pytest.importorskip("pytestqt")
 
+from PySide6.QtWidgets import QFrame, QLabel, QScrollArea, QWidget  # noqa: E402
 from pdf_toolkit.gui import MainWindow, RedactionBoxEditor, create_app  # noqa: E402
 
 
@@ -112,6 +113,15 @@ def _fresh_window(qtbot) -> MainWindow:
     window._last_request_context = None
     window._refresh_start_here()
     return window
+
+
+def _is_descendant_of(widget: QWidget, ancestor: QWidget) -> bool:
+    current = widget
+    while current is not None:
+        if current is ancestor:
+            return True
+        current = current.parentWidget()
+    return False
 
 
 def test_gui_launches_and_lists_operations(qtbot) -> None:
@@ -257,3 +267,54 @@ def test_batch_recent_activity_tracks_real_input_path(qtbot, tmp_path: Path) -> 
     )
     assert window._recent_runs[0]["input_paths"] == [str(incoming)]
     assert "incoming" in window._start_here_panel._recent_inputs.text().lower()
+
+
+def test_workspace_scroll_contains_center_stack_and_keeps_footer_fixed(qtbot) -> None:
+    window = _fresh_window(qtbot)
+    scroll = window.findChild(QScrollArea, "FormScroll")
+    assert scroll is not None
+    scroll_content = scroll.widget()
+    assert scroll_content is not None
+    assert scroll_content.objectName() == "WorkspaceScrollContent"
+
+    operation_card = window.findChild(QFrame, "OperationHero")
+    footer_card = window.findChild(QFrame, "ActionBarCard")
+    assert operation_card is not None
+    assert footer_card is not None
+
+    parameter_header = next(
+        label for label in window.findChildren(QLabel)
+        if label.property("workspaceRole") == "parameter-header"
+    )
+    parameter_caption = next(
+        label for label in window.findChildren(QLabel)
+        if label.property("workspaceRole") == "parameter-caption"
+    )
+
+    for widget in (window._start_here_panel, operation_card, parameter_header, parameter_caption, window._form_host):
+        assert _is_descendant_of(widget, scroll_content)
+
+    assert not _is_descendant_of(footer_card, scroll_content)
+    assert footer_card.parentWidget() is not None
+    assert not _is_descendant_of(window._report_input, scroll_content)
+
+
+def test_workspace_scroll_structure_survives_operation_switching(qtbot) -> None:
+    window = _fresh_window(qtbot)
+    scroll = window.findChild(QScrollArea, "FormScroll")
+    assert scroll is not None
+    scroll_content = scroll.widget()
+    assert scroll_content is not None
+    footer_card = window.findChild(QFrame, "ActionBarCard")
+    operation_card = window.findChild(QFrame, "OperationHero")
+    assert footer_card is not None
+    assert operation_card is not None
+
+    window._apply_template("merge-invoice-packet")
+    window._select_operation("split")
+    window._select_operation("batch-run")
+
+    assert _is_descendant_of(window._start_here_panel, scroll_content)
+    assert _is_descendant_of(operation_card, scroll_content)
+    assert _is_descendant_of(window._form_host, scroll_content)
+    assert not _is_descendant_of(footer_card, scroll_content)
