@@ -1,0 +1,10 @@
+# Default reviewers
+* @AboveWireless
+
+# Focus areas
+/docs/ @AboveWireless
+/.github/ @AboveWireless
+/installer/ @AboveWireless
+/scripts/ @AboveWireless
+/src/ @AboveWireless
+/tests/ @AboveWireless

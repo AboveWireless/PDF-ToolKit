@@ -9,6 +9,13 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/AboveWireless/PDF-ToolKit/actions/workflows/windows-gui-smoke.yml"><img src="https://github.com/AboveWireless/PDF-ToolKit/actions/workflows/windows-gui-smoke.yml/badge.svg" alt="Windows GUI smoke"></a>
+  <a href="https://github.com/AboveWireless/PDF-ToolKit/releases"><img src="https://img.shields.io/github/v/release/AboveWireless/PDF-ToolKit?display_name=tag" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/AboveWireless/PDF-ToolKit" alt="MIT License"></a>
+  <img src="https://img.shields.io/badge/platform-Windows%2011%20%2F%2010-0A6EBD" alt="Windows 11 and 10">
+</p>
+
+<p align="center">
   <a href="https://github.com/AboveWireless/PDF-ToolKit/releases">Download for Windows</a> |
   <a href="docs/run-from-source.md">Run from source</a> |
   <a href="docs/enabling-ocr.md">Enable OCR later</a> |
@@ -199,6 +206,10 @@ powershell -ExecutionPolicy Bypass -File scripts\build_installer.ps1
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

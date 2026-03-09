@@ -1,5 +1,11 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Windows install help
+    url: https://github.com/AboveWireless/PDF-ToolKit/blob/main/docs/install-windows.md
+    about: Use this if you need install, SmartScreen, or release-download guidance.
+  - name: Source setup help
+    url: https://github.com/AboveWireless/PDF-ToolKit/blob/main/docs/run-from-source.md
+    about: Use this if you are running the app from source or developing locally.
   - name: Security issue
     url: https://github.com/AboveWireless/PDF-ToolKit/security
     about: Do not file security issues publicly. Follow SECURITY.md instead.

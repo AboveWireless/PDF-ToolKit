@@ -4,10 +4,16 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-release:
     runs-on: windows-latest
+    timeout-minutes: 45
     permissions:
       contents: write
     steps:
@@ -16,6 +22,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
         run: python -m pip install -U pip && python -m pip install -e .[dev]
@@ -43,7 +50,9 @@ jobs:
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          name: PDF Toolkit ${{ github.ref_name }}
           body_path: .github/release-template.md
+          overwrite_files: true
           files: |
             dist/release/pdf-toolkit-windows-x64.zip
             dist/release/pdf-toolkit-setup-windows-x64.exe

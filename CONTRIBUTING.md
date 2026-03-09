@@ -30,15 +30,23 @@ python -m pytest
 powershell -ExecutionPolicy Bypass -File scripts\build_gui.ps1
 ```
 
+If you touch installer or release flow code, also run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\package_release.ps1
+```
+
 ## Pull request expectations
 
 - Keep changes focused and easy to review.
 - Add or update tests when behavior changes.
 - Preserve the Windows-first packaging flow.
 - Document user-facing changes in `README.md` or `docs/` when needed.
+- Update `CHANGELOG.md` for notable user-facing changes.
 
 ## Packaging notes
 
-- The primary release target is a portable Windows build.
+- The primary public release target is the Windows installer.
+- The portable ZIP remains a first-class fallback artifact.
 - OCR is optional for the first public release and should not break core workflows when unavailable.
 - If you add bundled tools later, place them under `vendor\`.
