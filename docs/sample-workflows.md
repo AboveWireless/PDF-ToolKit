@@ -3,8 +3,8 @@
 ## Merge monthly invoice PDFs
 
 - Open `Start Here`
+- Drop the invoice PDFs into the intake area, or choose `Merge Invoice Packet`
 - Choose `Merge Invoice Packet`
-- Add all invoice PDFs
 - Keep or rename the suggested output file
 - Run the job and review the merged preview
 
@@ -21,6 +21,7 @@
 - Open `Start Here`
 - Choose `Export Tables To Spreadsheet Files`
 - Select the report PDF
+- Keep the suggested export folder
 - Keep `All` or choose CSV, XLSX, or JSON
 - Save the results into a clean output folder
 
@@ -52,4 +53,4 @@
 - Choose `Watch Incoming Folder`
 - Point the workflow at an intake folder
 - Confirm the default output folder and batch steps
-- Run it as a repeatable folder workflow, or reuse the setup later from `Repeat Last Task`
+- Run it as a repeatable folder workflow, or reuse the setup later with `Repeat With Same Inputs` or `Repeat With New Inputs`

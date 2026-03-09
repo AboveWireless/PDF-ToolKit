@@ -9,7 +9,7 @@ The recommended path for most users is the Windows installer from GitHub Release
 3. Keep the default per-user install path unless you have a reason to change it.
 4. Choose whether you want the optional desktop shortcut.
 5. Launch `PDF Toolkit` from Start Menu after setup completes.
-6. Start with the `Start Here` screen and pick a workflow template such as `Merge Invoice Packet` or `Watch Incoming Folder`.
+6. Start with the `Start Here` screen, drop in one or more PDFs, and use the suggested task or a workflow template such as `Merge Invoice Packet` or `Watch Incoming Folder`.
 
 ## What the installer includes
 
@@ -30,6 +30,7 @@ The first public installer release is unsigned. Windows SmartScreen may show a w
 - Export text, images, attachments, metadata, and tables
 - Build LLM-ready extraction bundles for downstream tools
 - Use bundled workflow templates from the `Start Here` surface
+- Get smart output defaults, inline validation, and repeat-with-new-inputs shortcuts
 - Run folder workflows locally with repeatable outputs
 
 ## What is optional

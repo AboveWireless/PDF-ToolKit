@@ -54,7 +54,7 @@ It is Windows-first, offline-first, and designed to feel like a normal desktop a
 2. Download `pdf-toolkit-setup-windows-x64.exe`.
 3. Run the installer and accept the default per-user install path.
 4. Launch `PDF Toolkit` from Start Menu.
-5. Use `Start Here`, pick a workflow template, and run the job.
+5. Drop one or more PDFs into `Start Here`, accept the suggested task/output, and run the job.
 
 If you prefer a portable copy, download `pdf-toolkit-windows-x64.zip` instead.
 
@@ -64,10 +64,13 @@ The app opens to a `Start Here` surface that gets a new user to a real result fa
 
 ![Start Here workspace](docs/assets/screenshot-start-here.png)
 
+- drag-and-drop PDF intake with suggested tasks, page-count preflight, and scan/encryption hints
 - quick routes for combine, split, redact, export text, export tables, and folder workflows
 - bundled workflow templates with sane defaults for common office tasks
+- pinned workflows for one-click repeat use
 - readiness messaging that separates core-ready from optional add-ons
-- recent files, recent output folders, and `Repeat Last Task`
+- recent files, recent output folders, and rerun options for same or new inputs
+- a fixed `Ready To Run` summary with inline validation and smart output defaults
 
 Built-in templates currently include:
 
@@ -99,6 +102,7 @@ Built-in templates currently include:
 - It is installable like a normal Windows program, but still open-source and portable.
 - It keeps repeatable workflows local instead of pushing users toward cloud accounts.
 - It treats output folders, reports, and reruns as first-class parts of the UX.
+- It suggests likely tasks and default output paths instead of making users configure every job from scratch.
 - It makes optional features like OCR and LLM analysis visible without making the core app feel broken.
 
 ## OCR note

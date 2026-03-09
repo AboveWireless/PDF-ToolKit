@@ -20,6 +20,16 @@ That is expected unless `OPENAI_API_KEY` is configured. Local LLM-ready extracti
 - Try another operation, then return to the current one.
 - Use the Diagnostics tab to confirm core dependencies are available.
 
+## A field is highlighted in orange
+
+That means the current task still needs something before it can run, such as a missing input, output path, page range, or optional dependency for OCR/LLM work.
+
+## Output path did not autofill
+
+- Smart defaults appear after you choose or drop input PDFs for supported tasks.
+- If you already typed an output path, PDF Toolkit leaves your value alone.
+- Folder workflows fill defaults only after you pick files or an input folder.
+
 ## Source install issues
 
 - Confirm you are using Python 3.11 or newer.

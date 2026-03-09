@@ -1,7 +1,9 @@
 ## Highlights
 
 - Installable Windows desktop PDF workflows for real office/admin work
-- New `Start Here` onboarding surface with bundled workflow templates
+- Drag-and-drop `Start Here` onboarding surface with bundled workflow templates
+- Smart task suggestions, output defaults, and inline validation for faster setup
+- Pinned workflows plus repeat-with-same-inputs or new-inputs shortcuts
 - Built-in LLM-ready extraction bundles for downstream prompts and indexing
 - Standard Windows installer for non-Python users
 - Portable packaged app still available
@@ -11,7 +13,7 @@
 
 1. Download `pdf-toolkit-setup-windows-x64.exe` for the normal install experience.
 2. Run the installer and launch `PDF Toolkit` from Start Menu.
-3. Open `Start Here` and choose a template such as `Merge Invoice Packet` or `Watch Incoming Folder`.
+3. Open `Start Here`, drop in a PDF, and use the suggested task or a template such as `Merge Invoice Packet` or `Watch Incoming Folder`.
 4. If you prefer a portable copy, download `pdf-toolkit-windows-x64.zip` instead.
 
 ## Workflow templates
