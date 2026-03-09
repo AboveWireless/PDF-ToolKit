@@ -1866,12 +1866,14 @@ class MainWindow(QMainWindow):
         self._category_items: dict[str, QTreeWidgetItem] = {}
         self._current_definition: OperationDefinition | None = None
         self._field_widgets: dict[str, object] = {}
+        self._field_labels: dict[str, QLabel] = {}
         self._watch_active = False
         self._last_request_context: dict[str, Any] | None = None
         self._current_intake_paths: list[str] = []
         self._pinned_workflows = self._load_pinned_workflows()
         self._last_used_values = self._load_last_used_values()
         self._latest_output_folder: Path | None = None
+        self._auto_filling = False
         self._recent_runs = self._load_recent_runs()
         self._build_ui()
         self._populate_operation_tree()
@@ -2241,12 +2243,14 @@ class MainWindow(QMainWindow):
         while self._form_layout.rowCount():
             self._form_layout.removeRow(0)
         self._field_widgets.clear()
+        self._field_labels.clear()
         if definition.id == "batch-run":
             builder = FolderBatchBuilder(self._settings)
             builder.changed.connect(self._refresh_preview)
             self._field_widgets["manifest_path"] = builder
             label = QLabel("Template Or Batch Setup")
             label.setObjectName("FieldLabel")
+            self._field_labels["manifest_path"] = label
             self._form_layout.addRow(label, builder)
             return
         for field_def in definition.fields:
@@ -2254,6 +2258,7 @@ class MainWindow(QMainWindow):
             self._field_widgets[field_def.name] = widget
             label = QLabel(field_def.label + (" *" if field_def.required else ""))
             label.setObjectName("FieldLabel")
+            self._field_labels[field_def.name] = label
             if field_def.help:
                 label.setToolTip(field_def.help)
                 widget.setToolTip(field_def.help)
@@ -2330,7 +2335,7 @@ class MainWindow(QMainWindow):
         elif isinstance(widget, QLineEdit):
             widget.setText("" if value in (None, []) else str(value))
 
-    def _apply_values_to_current_form(self, values: dict[str, Any], *, report_path: str | None = None) -> None:
+    def _apply_values_to_current_form(self, values: dict[str, Any], *, report_path: str | None = None, refresh: bool = True) -> None:
         for field_name, value in values.items():
             widget = self._field_widgets.get(field_name)
             if widget is None:
@@ -2338,7 +2343,8 @@ class MainWindow(QMainWindow):
             self._set_widget_value(widget, value)
         if report_path is not None and self._report_input.isVisible():
             self._report_input.set_value(report_path)
-        self._refresh_preview()
+        if refresh:
+            self._refresh_preview()
 
     def _apply_template(self, template_id: str) -> None:
         template = get_workflow_template(template_id)
@@ -2395,6 +2401,8 @@ class MainWindow(QMainWindow):
 
     def _refresh_preview(self) -> None:
         definition = self._current_definition
+        if not self._auto_filling and self._apply_smart_defaults_from_current_inputs():
+            return
         self._update_ready_summary()
         if definition is None or not definition.supports_preview:
             return
@@ -2780,6 +2788,84 @@ class MainWindow(QMainWindow):
         if values:
             self._apply_values_to_current_form(values)
 
+    def _apply_smart_defaults_from_current_inputs(self) -> bool:
+        if self._current_definition is None:
+            return False
+        definition = self._current_definition
+        values = self._collect_values()
+        updates: dict[str, Any] = {}
+        input_paths: list[str] = []
+
+        if definition.id == "batch-run":
+            payload = values.get("manifest_path", {})
+            if not isinstance(payload, dict):
+                return False
+            source_mode = str(payload.get("source_mode", "folder") or "folder")
+            if source_mode == "files":
+                input_paths = [str(path) for path in payload.get("input_files", []) if str(path).strip()]
+            elif payload.get("input_root"):
+                input_paths = [str(payload.get("input_root"))]
+            if not input_paths:
+                return False
+            suggestions = _suggest_output_values("batch-run", input_paths)
+            next_payload = dict(payload)
+            changed = False
+            for key, value in suggestions.items():
+                if next_payload.get(key) in (None, "", [], {}):
+                    next_payload[key] = value
+                    changed = True
+            if changed:
+                updates["manifest_path"] = next_payload
+        else:
+            for field_def in definition.fields:
+                if field_def.path_role != "input":
+                    continue
+                raw = values.get(field_def.name)
+                if raw in (None, "", [], {}):
+                    continue
+                if isinstance(raw, list):
+                    input_paths = [str(item) for item in raw if str(item).strip()]
+                else:
+                    input_paths = [str(raw)]
+                if input_paths:
+                    break
+            if not input_paths:
+                return False
+            for key, value in _suggest_output_values(definition.id, input_paths).items():
+                if values.get(key) in (None, "", [], {}):
+                    updates[key] = value
+
+        if not updates:
+            return False
+        self._auto_filling = True
+        try:
+            self._apply_values_to_current_form(updates, refresh=False)
+        finally:
+            self._auto_filling = False
+        self._refresh_preview()
+        return True
+
+    def _set_validation_state(self, widget: object, state: str | None, message: str | None = None) -> None:
+        if not isinstance(widget, QWidget):
+            return
+        widget.setProperty("validationState", state or "")
+        widget.style().unpolish(widget)
+        widget.style().polish(widget)
+        if message is not None:
+            widget.setToolTip(message)
+
+    def _apply_widget_validation(self, field_errors: dict[str, str]) -> None:
+        for field_name, widget in self._field_widgets.items():
+            message = field_errors.get(field_name)
+            self._set_validation_state(widget, "error" if message else None, message)
+            label = self._field_labels.get(field_name)
+            if label is not None:
+                label.setProperty("validationState", "error" if message else "")
+                label.style().unpolish(label)
+                label.style().polish(label)
+                if message is not None:
+                    label.setToolTip(message)
+
     def _update_ready_summary(self, *, notify: bool = False) -> bool:
         if self._current_definition is None:
             self._ready_summary.setText("Choose a task to see setup guidance.")
@@ -2789,16 +2875,23 @@ class MainWindow(QMainWindow):
         values = self._collect_values()
         errors: list[str] = []
         warnings: list[str] = []
+        field_errors: dict[str, str] = {}
 
         for field_def in definition.fields:
             value = values.get(field_def.name)
             if field_def.required and value in (None, "", [], {}):
-                errors.append(f"{field_def.label} is required.")
+                message = f"{field_def.label} is required."
+                errors.append(message)
+                field_errors[field_def.name] = message
 
         if definition.id == "split" and not values.get("every_page") and not values.get("ranges"):
-            errors.append("Add page ranges or enable Every Page before running Split Pages.")
+            message = "Add page ranges or enable Every Page before running Split Pages."
+            errors.append(message)
+            field_errors["ranges"] = message
         if definition.id == "analyze-llm" and values.get("preset") == "qa" and not str(values.get("question", "")).strip():
-            errors.append("Question is required when the LLM preset is Q&A.")
+            message = "Question is required when the LLM preset is Q&A."
+            errors.append(message)
+            field_errors["question"] = message
 
         statuses = collect_doctor_status("all")
         status_map = {status.name: status for status in statuses}
@@ -2814,6 +2907,22 @@ class MainWindow(QMainWindow):
             missing = [name for name in ("ocrmypdf", "tesseract", "gswin64c") if name in status_map and not status_map[name].available]
             if missing:
                 warnings.append("Table extraction can still run, but OCR First needs the optional OCR tools.")
+        if definition.id == "batch-run":
+            payload = values.get("manifest_path", {})
+            if isinstance(payload, dict):
+                source_mode = str(payload.get("source_mode", "folder") or "folder")
+                if source_mode == "files" and not payload.get("input_files"):
+                    message = "Choose one or more input files for the folder workflow."
+                    errors.append(message)
+                    field_errors["manifest_path"] = message
+                if source_mode != "files" and not str(payload.get("input_root", "")).strip():
+                    message = "Choose an input folder for the folder workflow."
+                    errors.append(message)
+                    field_errors["manifest_path"] = message
+                if not str(payload.get("output_root", "")).strip():
+                    message = "Choose an output folder for the folder workflow."
+                    errors.append(message)
+                    field_errors["manifest_path"] = message
 
         inputs = [field_def.label for field_def in definition.fields if field_def.path_role == "input" and values.get(field_def.name) not in (None, "", [], {})]
         outputs = [field_def.label for field_def in definition.fields if field_def.path_role == "output" and values.get(field_def.name) not in (None, "", [], {})]
@@ -2822,6 +2931,7 @@ class MainWindow(QMainWindow):
         input_text = ", ".join(inputs) if inputs else "No input selected yet"
         output_text = ", ".join(outputs) if outputs else "No destination chosen yet"
         self._ready_summary.setText(f"Task: {definition.label} · Inputs: {input_text} · Destination: {output_text}")
+        self._apply_widget_validation(field_errors)
 
         detail_parts: list[str] = []
         if warnings:
@@ -2935,6 +3045,9 @@ def create_app() -> QApplication:
             color: #f4efe4;
             font-weight: 600;
         }
+        QLabel#FieldLabel[validationState="error"] {
+            color: #ff9b71;
+        }
         QLabel#WelcomeTitle {
             font-family: "Bahnschrift";
             color: #fff7eb;
@@ -3042,6 +3155,10 @@ def create_app() -> QApplication:
             gridline-color: rgba(255, 255, 255, 0.08);
             selection-background-color: #de7c4b;
             selection-color: #fff7eb;
+        }
+        QWidget[validationState="error"], QListWidget[validationState="error"], QPlainTextEdit[validationState="error"], QTableWidget[validationState="error"], QComboBox[validationState="error"], QSpinBox[validationState="error"], QDoubleSpinBox[validationState="error"], QLineEdit[validationState="error"] {
+            border: 1px solid rgba(255, 155, 113, 0.9);
+            background: #2a1820;
         }
         QTableWidget::item {
             padding: 4px;

@@ -386,10 +386,11 @@ def test_pinned_workflows_persist_and_render(qtbot) -> None:
 def test_ready_summary_updates_with_inputs_and_outputs(qtbot, sample_pdf: Path, tmp_path: Path) -> None:
     window = _fresh_window(qtbot)
     window._select_operation("extract-text")
-    window._apply_values_to_current_form({"input_path": str(sample_pdf), "output": str(tmp_path / "sample-text.txt")})
+    window._apply_values_to_current_form({"input_path": str(sample_pdf)})
     assert "Task: Export Text" in window._ready_summary.text()
     assert "Destination: Save Text File As" in window._ready_summary.text()
     assert "Setup looks ready" in window._ready_warning.text()
+    assert window._collect_values()["output"] == "sample-text.txt"
 
 
 def test_repeat_new_inputs_clears_batch_sources(qtbot, tmp_path: Path) -> None:
@@ -431,3 +432,25 @@ def test_intake_and_output_suggestion_helpers(sample_pdf: Path) -> None:
     suggestion = _suggest_workflow_for_intake([sample_pdf])
     assert suggestion["suggested_operation"] == "extract-text"
     assert _suggest_output_values("extract-text", [sample_pdf])["output"] == "sample-text.txt"
+
+
+def test_manual_input_autofills_merge_output(qtbot, sample_pdf: Path) -> None:
+    window = _fresh_window(qtbot)
+    window._select_operation("merge")
+    window._apply_values_to_current_form({"inputs": [str(sample_pdf), str(sample_pdf.with_name("sample-2.pdf"))]})
+    assert window._collect_values()["output"] == "merged.pdf"
+
+
+def test_field_validation_marks_missing_llm_question(qtbot, sample_pdf: Path, tmp_path: Path) -> None:
+    window = _fresh_window(qtbot)
+    window._select_operation("analyze-llm")
+    window._apply_values_to_current_form(
+        {
+            "input_path": str(sample_pdf),
+            "output_dir": str(tmp_path / "analysis"),
+            "preset": "qa",
+        }
+    )
+    window._update_ready_summary()
+    assert window._field_labels["question"].property("validationState") == "error"
+    assert window._field_widgets["question"].property("validationState") == "error"
