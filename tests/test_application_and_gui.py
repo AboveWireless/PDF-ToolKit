@@ -101,7 +101,7 @@ pytest.importorskip("PySide6")
 pytest.importorskip("pytestqt")
 
 from PySide6.QtWidgets import QFrame, QLabel, QScrollArea, QWidget  # noqa: E402
-from pdf_toolkit.gui import MainWindow, RedactionBoxEditor, create_app  # noqa: E402
+from pdf_toolkit.gui import MainWindow, RedactionBoxEditor, _suggest_output_values, _suggest_workflow_for_intake, create_app  # noqa: E402
 
 
 def _fresh_window(qtbot) -> MainWindow:
@@ -110,6 +110,9 @@ def _fresh_window(qtbot) -> MainWindow:
     qtbot.addWidget(window)
     window._settings.clear()
     window._recent_runs = []
+    window._pinned_workflows = []
+    window._last_used_values = {}
+    window._current_intake_paths = []
     window._last_request_context = None
     window._refresh_start_here()
     return window
@@ -177,7 +180,8 @@ def test_start_here_panel_lists_templates_and_optional_note(qtbot) -> None:
     window._start_here_panel.select_template("ocr-scanned-documents")
     assert "OCRmyPDF" in window._start_here_panel._template_note.text()
     assert window._start_here_panel._readiness.text()
-    assert not window._start_here_panel._repeat_button.isEnabled()
+    assert not window._start_here_panel._repeat_same_button.isEnabled()
+    assert not window._start_here_panel._repeat_new_button.isEnabled()
 
 
 def test_operation_template_prefills_form(qtbot) -> None:
@@ -232,9 +236,10 @@ def test_recent_activity_updates_after_success_and_repeat(qtbot, sample_pdf: Pat
         ),
         report_path,
     )
-    assert window._start_here_panel._repeat_button.isEnabled()
+    assert window._start_here_panel._repeat_same_button.isEnabled()
+    assert window._start_here_panel._repeat_new_button.isEnabled()
     assert "sample.pdf" in window._start_here_panel._recent_inputs.text()
-    assert "Last task: Combine PDFs" in window._start_here_panel._recent_task.text()
+    assert "Latest run: Combine PDFs" in window._start_here_panel._recent_task.text()
     assert window._results._open_primary_button.isEnabled()
     assert window._results._open_folder_button.isEnabled()
     assert window._results._open_report_button.isEnabled()
@@ -244,6 +249,10 @@ def test_recent_activity_updates_after_success_and_repeat(qtbot, sample_pdf: Pat
     values = window._collect_values()
     assert values["output"] == str(output_path)
     assert values["inputs"] == [str(sample_pdf), str(sample_pdf)]
+    window._repeat_last_task(False)
+    values = window._collect_values()
+    assert values["inputs"] == []
+    assert values["output"] == str(output_path)
 
 
 def test_batch_recent_activity_tracks_real_input_path(qtbot, tmp_path: Path) -> None:
@@ -287,16 +296,10 @@ def test_workspace_scroll_contains_center_stack_and_keeps_footer_fixed(qtbot) ->
     assert scroll_content.objectName() == "WorkspaceScrollContent"
     assert scroll.widget() is scroll_content
 
-    parameter_header = next(
-        label for label in window.findChildren(QLabel)
-        if label.property("workspaceRole") == "parameter-header"
-    )
-    parameter_caption = next(
-        label for label in window.findChildren(QLabel)
-        if label.property("workspaceRole") == "parameter-caption"
-    )
+    parameter_header = next(label for label in window.findChildren(QLabel) if label.property("workspaceRole") == "parameter-header")
+    parameter_caption = next(label for label in window.findChildren(QLabel) if label.property("workspaceRole") == "parameter-caption")
 
-    for widget in (window._start_here_panel, operation_card, parameter_header, parameter_caption, window._form_host):
+    for widget in (window._start_here_panel, operation_card, window._workspace_intake_zone, window._preflight_card, parameter_header, parameter_caption, window._form_host):
         assert _is_descendant_of(widget, scroll_content)
 
     assert not _is_descendant_of(footer_card, scroll_content)
@@ -340,3 +343,91 @@ def test_workspace_scroll_structure_survives_all_templates(qtbot) -> None:
         assert _is_descendant_of(operation_card, scroll_content)
         assert _is_descendant_of(window._form_host, scroll_content)
         assert not _is_descendant_of(footer_card, scroll_content)
+
+
+def test_intake_suggestion_prefills_task_and_output(qtbot, sample_pdf: Path) -> None:
+    window = _fresh_window(qtbot)
+    window._ingest_paths([str(sample_pdf)])
+    assert window._current_definition is not None
+    assert window._current_definition.id == "extract-text"
+    assert window._collect_values()["input_path"] == str(sample_pdf)
+    assert window._collect_values()["output"] == "sample-text.txt"
+    assert window._start_here_panel._suggested_task.text() == "Export Text"
+
+
+def test_multi_pdf_intake_suggests_merge(qtbot, sample_pdf: Path) -> None:
+    window = _fresh_window(qtbot)
+    window._ingest_paths([str(sample_pdf), str(sample_pdf.with_name("sample-2.pdf"))])
+    assert window._current_definition is not None
+    assert window._current_definition.id == "merge"
+    assert window._collect_values()["output"] == "merged.pdf"
+    assert window._preflight_metric.text().startswith("2 PDF(s)")
+
+
+def test_pinned_workflows_persist_and_render(qtbot) -> None:
+    create_app()
+    first = MainWindow()
+    qtbot.addWidget(first)
+    first._settings.clear()
+    first._pinned_workflows = []
+    first._persist_pinned_workflows()
+    first._select_operation("merge")
+    first._toggle_current_operation_pin()
+    first._toggle_template_pin("merge-invoice-packet")
+
+    second = MainWindow()
+    qtbot.addWidget(second)
+    labels = [item["label"] for item in second._pinned_workflows]
+    assert "Combine PDFs" in labels
+    assert "Merge Invoice Packet" in labels
+    assert not second._start_here_panel._pinned_empty.isVisible()
+
+
+def test_ready_summary_updates_with_inputs_and_outputs(qtbot, sample_pdf: Path, tmp_path: Path) -> None:
+    window = _fresh_window(qtbot)
+    window._select_operation("extract-text")
+    window._apply_values_to_current_form({"input_path": str(sample_pdf), "output": str(tmp_path / "sample-text.txt")})
+    assert "Task: Export Text" in window._ready_summary.text()
+    assert "Destination: Save Text File As" in window._ready_summary.text()
+    assert "Setup looks ready" in window._ready_warning.text()
+
+
+def test_repeat_new_inputs_clears_batch_sources(qtbot, tmp_path: Path) -> None:
+    window = _fresh_window(qtbot)
+    incoming = tmp_path / "incoming"
+    processed = tmp_path / "processed"
+    incoming.mkdir()
+    processed.mkdir()
+    window._apply_template("watch-incoming-folder")
+    payload = window._collect_values()["manifest_path"]
+    assert isinstance(payload, dict)
+    payload["source_mode"] = "files"
+    payload["input_files"] = [str(incoming / "a.pdf")]
+    payload["output_root"] = str(processed)
+    window._last_request_context = {
+        "operation_id": "batch-run",
+        "label": "Run Folder Workflow",
+        "values": payload,
+        "report_path": None,
+    }
+    window._handle_result(
+        JobResult(
+            operation_id="batch-run",
+            status="success",
+            outputs=[processed / "job-summary.json"],
+            warnings=[],
+            details={},
+            error=None,
+            duration_ms=30,
+        ),
+        None,
+    )
+    window._repeat_last_task(False)
+    repeated = window._collect_values()["manifest_path"]
+    assert repeated["input_files"] == []
+
+
+def test_intake_and_output_suggestion_helpers(sample_pdf: Path) -> None:
+    suggestion = _suggest_workflow_for_intake([sample_pdf])
+    assert suggestion["suggested_operation"] == "extract-text"
+    assert _suggest_output_values("extract-text", [sample_pdf])["output"] == "sample-text.txt"
